@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Famous Faces Quiz</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f4f4f9; }
+        #game-container { max-width: 500px; margin: auto; padding: 20px; background: white; border-radius: 10px; }
+        img { width: 100%; height: 300px; object-fit: cover; border-radius: 8px; }
+        .option { display: block; width: 100%; padding: 10px; margin: 5px 0; cursor: pointer; background: #e0e0e0; border: none; border-radius: 5px; }
+        #timer { font-size: 20px; color: red; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>Famous Faces</h1>
+    <div id="stats">Coins: <span id="coin-count">10</span></div>
+    <div id="timer">Time: 5</div>
+    <img id="person-img" src="" alt="Famous Person">
+    <div id="options"></div>
+</div>
+
+<script>
+    const data = [
+        { name: "Albert Einstein", img: "https://picsum.photos/400/300?1", options: ["Einstein", "Newton", "Tesla", "Darwin"] },
+        { name: "Taylor Swift", img: "https://picsum.photos/400/300?2", options: ["Swift", "Beyonce", "Adele", "Rihanna"] },
+        // Add more objects here!
+    ];
+
+    let coins = 10, streakWrong = 0, totalWrong = 0, currentIdx = 0, timeLeft = 5;
+    let timer;
+
+    function startGame() {
+        if (coins <= 0) { alert("Out of coins! Wait 10 mins."); return; }
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = data[currentIdx];
+        document.getElementById('person-img').src = q.img;
+        const optDiv = document.getElementById('options');
+        optDiv.innerHTML = '';
+        q.options.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.className = 'option';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(opt === q.name);
+            optDiv.appendChild(btn);
+        });
+        resetTimer();
+    }
+
+    function checkAnswer(isCorrect) {
+        clearInterval(timer);
+        if (isCorrect) {
+            coins += 2; streakWrong = 0;
+        } else {
+            coins -= 1; streakWrong++; totalWrong++;
+        }
+        document.getElementById('coin-count').innerText = coins;
+        
+        if (streakWrong >= 3 || totalWrong >= 5) { 
+            alert("Game Over!"); location.reload(); 
+        } else {
+            currentIdx++;
+            if (currentIdx < data.length) showQuestion();
+            else alert("Game Won! Coins: " + (coins + 30));
+        }
+    }
+
+    function resetTimer() {
+        timeLeft = 5;
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = "Time: " + timeLeft;
+            if (timeLeft <= 0) checkAnswer(false);
+        }, 1000);
+    }
+
+    startGame();
+</script>
+</body>
+</html>
