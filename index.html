@@ -44,53 +44,50 @@
         }
         
         .option-btn:hover {
-            transform: translateY(-4px) scale(1.03);
-            box-shadow: 0 20px 25px -5px rgb(0 245 212 / 0.3);
+            transform: translateY(-3px) scale(1.03);
         }
         
         .timer-bar {
             transition: width 0.1s linear;
         }
         
-        .modal {
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        
-        .coin-float {
-            animation: coinFloat 2s ease-in-out infinite;
-        }
-
-        /* NEW: Image loading improvements */
         #person-image {
             opacity: 0;
         }
         
         #image-placeholder {
-            animation: placeholderPulse 2s infinite ease-in-out;
+            animation: placeholderPulse 1.8s infinite ease-in-out;
         }
         
         @keyframes placeholderPulse {
-            0%, 100% { opacity: 0.6; }
+            0%, 100% { opacity: 0.7; }
             50% { opacity: 1; }
+        }
+        
+        /* Tighter layout - no scrolling needed */
+        .game-panel {
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
     </style>
 </head>
-<body class="tail-container bg-zinc-950 text-white min-h-screen flex flex-col">
-    <!-- HEADER (matched your deployed version) -->
+<body class="tail-container bg-zinc-950 text-white min-h-screen flex flex-col overflow-hidden">
+    <!-- HEADER (matched your deployed screenshot) -->
     <div class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <!-- Logo -->
             <div class="flex items-center gap-x-3">
-                <div class="w-9 h-9 bg-emerald-400 rounded-2xl flex items-center justify-center text-3xl shadow-inner">🧠</div>
+                <div class="w-9 h-9 bg-[#22d3ee] rounded-2xl flex items-center justify-center text-3xl shadow-inner">🧠</div>
                 <h1 class="title-font text-3xl tracking-[-1px]">FameGuess</h1>
                 <span class="text-xs font-medium px-3 py-1 bg-emerald-400/10 text-emerald-400 rounded-3xl">LEGEND MODE</span>
             </div>
             
-            <!-- Coins -->
-            <div onclick="showCoinsModal()" class="flex items-center gap-x-2 bg-zinc-800 hover:bg-zinc-700 px-6 py-2 rounded-3xl cursor-pointer">
-                <div class="w-6 h-6 bg-white text-zinc-900 rounded-xl flex items-center justify-center text-xl">🪙</div>
-                <div class="font-semibold text-2xl tabular-nums" id="coin-count">42</div>
-                <div class="text-emerald-400 text-sm font-medium">COINS</div>
+            <!-- Trophies -->
+            <div onclick="showTrophiesModal()" class="flex items-center gap-x-2 bg-zinc-800 hover:bg-zinc-700 px-5 py-2 rounded-3xl cursor-pointer">
+                <div class="text-3xl">🏆</div>
+                <div class="font-semibold text-2xl tabular-nums" id="trophy-count">0</div>
+                <div class="text-emerald-400 text-sm font-medium">TROPHIES</div>
             </div>
             
             <!-- Progress -->
@@ -101,24 +98,18 @@
                 </div>
                 <div id="question-counter" class="font-mono text-xl font-semibold text-emerald-400">1 / 10</div>
             </div>
-            
-            <!-- Streak -->
-            <div class="flex items-center gap-x-2 bg-zinc-800 px-5 py-2 rounded-3xl text-sm">
-                <span class="text-amber-400 text-xl">🔥</span>
-                <span id="streak-text" class="font-semibold">0 WRONG STREAK</span>
-            </div>
         </div>
     </div>
 
     <!-- MAIN SCREENS -->
-    <div class="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+    <div class="flex-1 max-w-6xl mx-auto w-full px-6 py-6 overflow-hidden flex flex-col">
         
         <!-- MENU SCREEN -->
-        <div id="screen-menu" class="flex flex-col items-center justify-center h-full text-center">
+        <div id="screen-menu" class="flex flex-col items-center justify-center flex-1 text-center">
             <div class="max-w-md mx-auto">
                 <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-3xl text-6xl mb-8 shadow-2xl rotate-12">🔍</div>
                 <h2 class="title-font text-6xl leading-none tracking-[-2px] mb-4">Guess the<br>Legend</h2>
-                <p class="text-zinc-400 text-xl mb-10">10 famous faces. 5 seconds each.<br>Prove you're a legend hunter.</p>
+                <p class="text-zinc-400 text-xl mb-10">10 famous faces.<br>5 seconds each.<br>No penalties — just pure skill.</p>
                 
                 <button onclick="startGame()" 
                         class="w-full bg-white text-zinc-900 hover:bg-emerald-400 hover:text-white font-semibold text-2xl py-6 rounded-3xl flex items-center justify-center gap-x-4 shadow-xl">
@@ -126,79 +117,72 @@
                     <span class="text-4xl">→</span>
                 </button>
                 
-                <div class="grid grid-cols-3 gap-4 mt-8 text-sm">
+                <div class="grid grid-cols-3 gap-4 mt-10 text-sm">
                     <div class="bg-zinc-900 rounded-3xl p-6 text-center">
-                        <div class="text-emerald-400 text-3xl mb-1">+2</div>
-                        <div class="font-medium">Correct</div>
+                        <div class="text-emerald-400 text-3xl mb-1">+1</div>
+                        <div class="font-medium">TROPHY</div>
+                        <div class="text-xs text-zinc-400">for perfect 10/10</div>
                     </div>
                     <div class="bg-zinc-900 rounded-3xl p-6 text-center">
-                        <div class="text-rose-400 text-3xl mb-1">-1</div>
-                        <div class="font-medium">Wrong</div>
+                        <div class="text-rose-400 text-3xl mb-1">0</div>
+                        <div class="font-medium">PENALTIES</div>
                     </div>
-                    <div class="bg-zinc-900 rounded-3xl p-6 text-center border border-emerald-400">
-                        <div class="text-emerald-400 text-3xl mb-1">+30</div>
-                        <div class="font-medium">PERFECT 10</div>
+                    <div class="bg-zinc-900 rounded-3xl p-6 text-center">
+                        <div class="text-emerald-400 text-3xl mb-1">5s</div>
+                        <div class="font-medium">TIMER</div>
                     </div>
-                </div>
-                
-                <div id="cooldown-banner" onclick="checkCooldown()" class="hidden mt-8 bg-amber-400/10 border border-amber-400 text-amber-400 rounded-3xl px-8 py-4 flex items-center justify-between cursor-pointer">
-                    <div class="flex items-center gap-x-3">
-                        <span class="text-2xl">⏳</span>
-                        <div>
-                            <div class="font-semibold">Out of coins • Cooldown active</div>
-                            <div id="cooldown-time" class="text-sm font-mono"></div>
-                        </div>
-                    </div>
-                    <div class="text-xs bg-amber-400 text-zinc-900 px-6 py-2 rounded-3xl font-semibold">WAIT 10 MIN</div>
                 </div>
             </div>
         </div>
         
         <!-- GAME SCREEN -->
-        <div id="screen-game" class="hidden">
-            <div class="game-container bg-zinc-900 rounded-3xl p-8 max-w-4xl mx-auto">
+        <div id="screen-game" class="hidden flex-1 flex flex-col game-panel">
+            <div class="bg-zinc-900 rounded-3xl p-6 flex-1 flex flex-col max-w-3xl mx-auto w-full">
                 
                 <!-- Timer -->
-                <div class="flex items-center gap-x-4 mb-6">
+                <div class="flex items-center gap-x-4 mb-4">
                     <div class="text-xs font-mono uppercase tracking-[1px] text-zinc-400">TIME LEFT</div>
                     <div class="flex-1 h-3 bg-zinc-800 rounded-3xl overflow-hidden">
                         <div id="timer-bar" class="timer-bar h-3 bg-gradient-to-r from-cyan-400 to-emerald-400 w-[100%]"></div>
                     </div>
-                    <div id="timer-text" class="font-mono text-xl font-semibold w-12 text-right">5.0</div>
+                    <div id="timer-text" class="font-mono text-2xl font-semibold w-14 text-right">5.0</div>
                 </div>
                 
-                <!-- Image Container with improved loading -->
-                <div class="image-container bg-zinc-950 rounded-3xl aspect-video relative overflow-hidden mb-8 flex items-center justify-center border border-emerald-400/20">
+                <!-- Image Container - tighter + faster loading -->
+                <div class="image-container bg-zinc-950 rounded-3xl aspect-video relative overflow-hidden flex-1 flex items-center justify-center border border-emerald-400/20 mb-6">
                     
-                    <!-- Placeholder (exactly like your screenshot) -->
+                    <!-- Placeholder -->
                     <div id="image-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 z-10">
-                        <div class="text-6xl mb-3">👤</div>
+                        <div class="text-7xl mb-4">👤</div>
                         <div class="text-2xl font-medium">Famous person</div>
-                        <div id="loading-text" class="text-xs mt-6 font-mono tracking-widest flex items-center gap-2">
-                            <span class="animate-pulse">LOADING LEGEND</span>
+                        <div class="text-xs mt-8 font-mono tracking-widest flex items-center gap-2">
+                            <span class="animate-pulse">LOADING LEGEND...</span>
                             <span class="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></span>
                         </div>
                     </div>
                     
-                    <!-- Actual image -->
+                    <!-- Image -->
                     <img id="person-image" 
                          class="w-full h-full object-cover rounded-3xl"
+                         loading="eager"
+                         decoding="sync"
+                         fetchpriority="high"
                          alt="Famous person">
                     
                     <!-- Feedback overlay -->
-                    <div id="image-overlay" class="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 z-20">
+                    <div id="image-overlay" class="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 z-20 rounded-3xl">
                         <div id="feedback-text" class="text-6xl font-bold title-font px-12 py-6 rounded-3xl text-center"></div>
                     </div>
                 </div>
                 
-                <!-- Options -->
-                <div id="options-grid" class="grid grid-cols-2 gap-4">
+                <!-- Options - tighter spacing -->
+                <div id="options-grid" class="grid grid-cols-2 gap-3 flex-1">
                     <!-- JS injected -->
                 </div>
             </div>
             
             <!-- Bottom status -->
-            <div class="flex justify-center mt-8 text-zinc-400 text-sm font-medium">
+            <div class="flex justify-center mt-6 text-zinc-400 text-sm font-medium">
                 <div class="flex items-center gap-x-8">
                     <div>CORRECT: <span id="correct-count" class="text-emerald-400 font-semibold">0</span>/10</div>
                     <div>WRONG: <span id="wrong-count" class="text-rose-400 font-semibold">0</span></div>
@@ -206,8 +190,8 @@
             </div>
         </div>
         
-        <!-- RESULTS SCREEN (unchanged) -->
-        <div id="screen-results" class="hidden flex flex-col items-center justify-center h-full text-center">
+        <!-- RESULTS SCREEN -->
+        <div id="screen-results" class="hidden flex flex-col items-center justify-center flex-1 text-center">
             <div class="max-w-lg mx-auto bg-zinc-900 rounded-3xl p-10">
                 <div id="result-icon" class="text-8xl mb-6"></div>
                 <h2 id="result-title" class="title-font text-5xl mb-2"></h2>
@@ -215,15 +199,17 @@
                 
                 <div class="grid grid-cols-2 gap-6 mb-10">
                     <div class="bg-zinc-800 rounded-3xl p-6">
-                        <div class="text-emerald-400 text-sm font-medium mb-1">THIS ROUND</div>
-                        <div id="round-coins" class="text-5xl font-semibold tabular-nums">+12</div>
-                        <div class="text-xs text-zinc-400 mt-4">COINS EARNED</div>
+                        <div class="text-emerald-400 text-sm font-medium mb-1">CORRECT</div>
+                        <div id="final-correct" class="text-5xl font-semibold tabular-nums">8</div>
                     </div>
                     <div class="bg-zinc-800 rounded-3xl p-6">
-                        <div class="text-zinc-400 text-sm font-medium mb-1">TOTAL COINS</div>
-                        <div id="total-coins-final" class="text-5xl font-semibold tabular-nums">54</div>
-                        <div class="text-xs text-zinc-400 mt-4">YOUR BALANCE</div>
+                        <div class="text-rose-400 text-sm font-medium mb-1">WRONG</div>
+                        <div id="final-wrong" class="text-5xl font-semibold tabular-nums">2</div>
                     </div>
+                </div>
+                
+                <div id="trophy-unlocked" class="hidden items-center justify-center gap-x-3 text-emerald-400 font-semibold text-2xl mb-8">
+                    🏆 TROPHY UNLOCKED!
                 </div>
                 
                 <div class="flex gap-4">
@@ -232,150 +218,101 @@
                     <button onclick="goToMenu()" 
                             class="flex-1 py-5 bg-zinc-800 hover:bg-zinc-700 font-semibold text-xl rounded-3xl">MAIN MENU</button>
                 </div>
-                
-                <div id="perfect-badge" class="hidden mt-6 text-emerald-400 flex items-center justify-center gap-x-2 text-sm font-medium">
-                    <span class="text-2xl">🏆</span> PERFECT ROUND — LEGEND STATUS UNLOCKED
-                </div>
             </div>
         </div>
     </div>
     
-    <!-- COINS MODAL + EARLY MODAL (unchanged) -->
-    <div onclick="if(event.target.id === 'coins-modal')hideCoinsModal()" 
-         id="coins-modal"
-         class="hidden fixed inset-0 bg-black/70 z-[9999] flex items-end md:items-center justify-center">
-        <div onclick="event.stopImmediatePropagation()" 
-             class="bg-zinc-900 w-full max-w-md mx-4 md:mx-0 rounded-t-3xl md:rounded-3xl p-8">
-            <h3 class="text-2xl font-semibold mb-6 flex items-center gap-x-3">
-                <span>🪙</span> Your Coin Vault
-            </h3>
-            <div class="flex items-center justify-between mb-8">
-                <div class="text-7xl font-bold tabular-nums" id="modal-coin-count">42</div>
-                <div class="text-emerald-400">+2 per correct • -1 per wrong</div>
-            </div>
-            
-            <div class="text-sm text-zinc-400 space-y-6">
-                <div class="flex justify-between">
-                    <span>Play cost</span>
-                    <span class="font-medium text-white">FREE</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>3 wrong in a row</span>
-                    <span class="text-rose-400">-5 coins penalty</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>5 wrong total</span>
-                    <span class="text-emerald-400">Round nets 0 coins</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Perfect 10/10</span>
-                    <span class="text-emerald-400">+30 bonus</span>
-                </div>
-            </div>
-            
-            <button onclick="hideCoinsModal()" 
-                    class="mt-8 w-full py-4 text-lg bg-emerald-400 text-zinc-950 rounded-3xl font-semibold">Got it, back to game</button>
-        </div>
-    </div>
-    
-    <div onclick="if(event.target.id === 'early-modal')hideEarlyModal()" 
-         id="early-modal"
+    <!-- TROPHIES MODAL -->
+    <div onclick="if(event.target.id === 'trophies-modal')hideTrophiesModal()" 
+         id="trophies-modal"
          class="hidden fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center">
         <div onclick="event.stopImmediatePropagation()" 
-             class="bg-zinc-900 rounded-3xl p-10 max-w-sm text-center">
-            <div class="text-6xl mb-4">💥</div>
-            <h3 class="title-font text-4xl mb-2">GAME OVER</h3>
-            <p id="early-reason" class="text-zinc-400 mb-8"></p>
-            <button onclick="hideEarlyModal();goToMenu()" 
-                    class="w-full py-5 bg-rose-400 text-white rounded-3xl font-semibold">RETURN TO MENU</button>
+             class="bg-zinc-900 w-full max-w-md mx-4 rounded-3xl p-8">
+            <h3 class="text-2xl font-semibold mb-6 flex items-center gap-x-3">
+                <span>🏆</span> Your Trophy Collection
+            </h3>
+            <div class="flex items-center justify-center text-8xl mb-8" id="modal-trophy-count">0</div>
+            <p class="text-center text-zinc-400">Earn one trophy for every perfect 10/10 round.<br>No penalties. Pure legend status.</p>
+            <button onclick="hideTrophiesModal()" 
+                    class="mt-10 w-full py-4 text-lg bg-emerald-400 text-zinc-950 rounded-3xl font-semibold">Back to game</button>
         </div>
     </div>
     
     <script>
-        // ==================== IMPROVED IMAGE LOADING ====================
-        // All images now use 640px thumbnails (much faster than 800px)
+        // ==================== QUESTIONS (320px thumbnails = super fast) ====================
         const questionsPool = [
-            { id: 1, name: "Albert Einstein", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Einstein_1921_by_F_Schmutzer_4.jpg/640px-Einstein_1921_by_F_Schmutzer_4.jpg", wrongs: ["Isaac Newton", "Nikola Tesla", "Stephen Hawking"] },
-            { id: 2, name: "Leonardo da Vinci", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Leonardo_da_Vinci_-_presumed_self-portrait_-_cropped.jpg/640px-Leonardo_da_Vinci_-_presumed_self-portrait_-_cropped.jpg", wrongs: ["Michelangelo", "Raphael", "Donatello"] },
-            { id: 3, name: "Marie Curie", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Marie_Curie_%28Nobel%29.jpg/640px-Marie_Curie_%28Nobel%29.jpg", wrongs: ["Ada Lovelace", "Rosalind Franklin", "Jane Goodall"] },
-            { id: 4, name: "Nelson Mandela", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nelson_Mandela_1994.jpg/640px-Nelson_Mandela_1994.jpg", wrongs: ["Martin Luther King Jr.", "Mahatma Gandhi", "Desmond Tutu"] },
-            { id: 5, name: "Barack Obama", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/640px-President_Barack_Obama.jpg", wrongs: ["Bill Clinton", "George W. Bush", "Joe Biden"] },
-            { id: 6, name: "Elon Musk", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop1%29.jpg/640px-Elon_Musk_Royal_Society_%28crop1%29.jpg", wrongs: ["Jeff Bezos", "Mark Zuckerberg", "Bill Gates"] },
-            { id: 7, name: "Taylor Swift", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Taylor_Swift_at_the_2024_MTV_Video_Music_Awards_%28cropped%29.jpg/640px-Taylor_Swift_at_the_2024_MTV_Video_Music_Awards_%28cropped%29.jpg", wrongs: ["Ariana Grande", "Beyoncé", "Katy Perry"] },
-            { id: 8, name: "Abraham Lincoln", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Abraham_Lincoln_O-77_matte_collodion_print.jpg/640px-Abraham_Lincoln_O-77_matte_collodion_print.jpg", wrongs: ["George Washington", "Thomas Jefferson", "Theodore Roosevelt"] },
-            { id: 9, name: "Marilyn Monroe", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Marilyn_Monroe_-_publicity_photo_for_The_Seven_Year_Itch_%281954%29.jpg/640px-Marilyn_Monroe_-_publicity_photo_for_The_Seven_Year_Itch_%281954%29.jpg", wrongs: ["Audrey Hepburn", "Elizabeth Taylor", "Grace Kelly"] },
-            { id: 10, name: "Cleopatra", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Cleopatra_VII_portrait_Altes_Museum_Berlin.jpg/640px-Cleopatra_VII_portrait_Altes_Museum_Berlin.jpg", wrongs: ["Nefertiti", "Hatshepsut", "Queen Elizabeth I"] },
-            { id: 11, name: "William Shakespeare", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/William_Shakespeare_1609.jpg/640px-William_Shakespeare_1609.jpg", wrongs: ["Charles Dickens", "Jane Austen", "Mark Twain"] },
-            { id: 12, name: "Michael Jackson", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Michael_Jackson_in_1988.jpg/640px-Michael_Jackson_in_1988.jpg", wrongs: ["Prince", "Freddie Mercury", "David Bowie"] },
-            { id: 13, name: "Frida Kahlo", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Frida_Kahlo_1941.jpg/640px-Frida_Kahlo_1941.jpg", wrongs: ["Georgia O'Keeffe", "Pablo Picasso", "Salvador Dalí"] },
-            { id: 14, name: "Steve Jobs", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Steve_Jobs_at_the_Apple_WWDC_2008.jpg/640px-Steve_Jobs_at_the_Apple_WWDC_2008.jpg", wrongs: ["Bill Gates", "Mark Zuckerberg", "Jeff Bezos"] },
-            { id: 15, name: "Malala Yousafzai", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Malala_Yousafzai_%28cropped%29.jpg/640px-Malala_Yousafzai_%28cropped%29.jpg", wrongs: ["Greta Thunberg", "Emma Watson", "Michelle Obama"] },
-            { id: 16, name: "Pablo Picasso", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Pablo_Picasso%2C_1925.jpg/640px-Pablo_Picasso%2C_1925.jpg", wrongs: ["Salvador Dalí", "Vincent van Gogh", "Claude Monet"] },
-            { id: 17, name: "Oprah Winfrey", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Oprah_Winfrey_at_the_2016_Vanity_Fair_Oscars_Party_%28cropped%29.jpg/640px-Oprah_Winfrey_at_the_2016_Vanity_Fair_Oscars_Party_%28cropped%29.jpg", wrongs: ["Michelle Obama", "Beyoncé", "Ellen DeGeneres"] },
-            { id: 18, name: "Vincent van Gogh", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project.jpg/640px-Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project.jpg", wrongs: ["Claude Monet", "Edvard Munch", "Paul Gauguin"] },
-            { id: 19, name: "Beyoncé", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Beyonc%C3%A9_at_the_2016_VMA_%28cropped%29.jpg/640px-Beyonc%C3%A9_at_the_2016_VMA_%28cropped%29.jpg", wrongs: ["Rihanna", "Lady Gaga", "Ariana Grande"] },
-            { id: 20, name: "Nikola Tesla", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Nikola_Tesla_1890.jpg/640px-Nikola_Tesla_1890.jpg", wrongs: ["Thomas Edison", "Alexander Graham Bell", "Albert Einstein"] },
-            { id: 21, name: "Jane Austen", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Jane_Austen_by_Cassandra_Austen_%28cropped%29.jpg/640px-Jane_Austen_by_Cassandra_Austen_%28cropped%29.jpg", wrongs: ["Charlotte Brontë", "Mary Shelley", "Emily Brontë"] },
-            { id: 22, name: "Lionel Messi", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Lionel_Messi_%28cropped%29.jpg/640px-Lionel_Messi_%28cropped%29.jpg", wrongs: ["Cristiano Ronaldo", "Kylian Mbappé", "Neymar"] },
-            { id: 23, name: "Serena Williams", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Serena_Williams_%28cropped%29.jpg/640px-Serena_Williams_%28cropped%29.jpg", wrongs: ["Venus Williams", "Naomi Osaka", "Simona Halep"] },
-            { id: 24, name: "Martin Luther King Jr.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Martin_Luther_King_Jr_NYWTS.jpg/640px-Martin_Luther_King_Jr_NYWTS.jpg", wrongs: ["Malcolm X", "Nelson Mandela", "John F. Kennedy"] },
-            { id: 25, name: "Tom Hanks", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Tom_Hanks_at_the_2024_Palm_Springs_International_Film_Festival_%28cropped%29.jpg/640px-Tom_Hanks_at_the_2024_Palm_Springs_International_Film_Festival_%28cropped%29.jpg", wrongs: ["Tom Cruise", "Denzel Washington", "Leonardo DiCaprio"] },
-            { id: 26, name: "Ada Lovelace", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Ada_Lovelace_1838.jpg/640px-Ada_Lovelace_1838.jpg", wrongs: ["Marie Curie", "Grace Hopper", "Hedy Lamarr"] },
-            { id: 27, name: "Bob Marley", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bob_Marley_1977_%28cropped%29.jpg/640px-Bob_Marley_1977_%28cropped%29.jpg", wrongs: ["Jimi Hendrix", "Bob Dylan", "Marley family"] },
-            { id: 28, name: "Ruth Bader Ginsburg", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Ruth_Bader_Ginsburg_2016_portrait_%28cropped%29.jpg/640px-Ruth_Bader_Ginsburg_2016_portrait_%28cropped%29.jpg", wrongs: ["Sonia Sotomayor", "Elena Kagan", "Sandra Day O'Connor"] },
-            { id: 29, name: "Cristiano Ronaldo", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Cristiano_Ronaldo_2018.jpg/640px-Cristiano_Ronaldo_2018.jpg", wrongs: ["Lionel Messi", "Kylian Mbappé", "Neymar"] },
-            { id: 30, name: "Greta Thunberg", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Greta_Thunberg_2020_%28cropped%29.jpg/640px-Greta_Thunberg_2020_%28cropped%29.jpg", wrongs: ["Malala Yousafzai", "Emma Watson", "Alexandria Ocasio-Cortez"] },
-            { id: 31, name: "Freddie Mercury", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Freddie_Mercury_1977_%28cropped%29.jpg/640px-Freddie_Mercury_1977_%28cropped%29.jpg", wrongs: ["Elton John", "David Bowie", "Michael Jackson"] },
-            { id: 32, name: "Simone Biles", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Simone_Biles_2016_%28cropped%29.jpg/640px-Simone_Biles_2016_%28cropped%29.jpg", wrongs: ["Nadia Comăneci", "Mary Lou Retton", "Sunisa Lee"] }
+            { id: 1, name: "Albert Einstein", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Einstein_1921_by_F_Schmutzer_4.jpg/320px-Einstein_1921_by_F_Schmutzer_4.jpg", wrongs: ["Isaac Newton", "Nikola Tesla", "Stephen Hawking"] },
+            { id: 2, name: "Leonardo da Vinci", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Leonardo_da_Vinci_-_presumed_self-portrait_-_cropped.jpg/320px-Leonardo_da_Vinci_-_presumed_self-portrait_-_cropped.jpg", wrongs: ["Michelangelo", "Raphael", "Donatello"] },
+            { id: 3, name: "Marie Curie", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Marie_Curie_%28Nobel%29.jpg/320px-Marie_Curie_%28Nobel%29.jpg", wrongs: ["Ada Lovelace", "Rosalind Franklin", "Jane Goodall"] },
+            { id: 4, name: "Nelson Mandela", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nelson_Mandela_1994.jpg/320px-Nelson_Mandela_1994.jpg", wrongs: ["Martin Luther King Jr.", "Mahatma Gandhi", "Desmond Tutu"] },
+            { id: 5, name: "Barack Obama", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/320px-President_Barack_Obama.jpg", wrongs: ["Bill Clinton", "George W. Bush", "Joe Biden"] },
+            { id: 6, name: "Elon Musk", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop1%29.jpg/320px-Elon_Musk_Royal_Society_%28crop1%29.jpg", wrongs: ["Jeff Bezos", "Mark Zuckerberg", "Bill Gates"] },
+            { id: 7, name: "Taylor Swift", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Taylor_Swift_at_the_2024_MTV_Video_Music_Awards_%28cropped%29.jpg/320px-Taylor_Swift_at_the_2024_MTV_Video_Music_Awards_%28cropped%29.jpg", wrongs: ["Ariana Grande", "Beyoncé", "Katy Perry"] },
+            { id: 8, name: "Abraham Lincoln", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Abraham_Lincoln_O-77_matte_collodion_print.jpg/320px-Abraham_Lincoln_O-77_matte_collodion_print.jpg", wrongs: ["George Washington", "Thomas Jefferson", "Theodore Roosevelt"] },
+            { id: 9, name: "Marilyn Monroe", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Marilyn_Monroe_-_publicity_photo_for_The_Seven_Year_Itch_%281954%29.jpg/320px-Marilyn_Monroe_-_publicity_photo_for_The_Seven_Year_Itch_%281954%29.jpg", wrongs: ["Audrey Hepburn", "Elizabeth Taylor", "Grace Kelly"] },
+            { id: 10, name: "Cleopatra", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Cleopatra_VII_portrait_Altes_Museum_Berlin.jpg/320px-Cleopatra_VII_portrait_Altes_Museum_Berlin.jpg", wrongs: ["Nefertiti", "Hatshepsut", "Queen Elizabeth I"] },
+            { id: 11, name: "William Shakespeare", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/William_Shakespeare_1609.jpg/320px-William_Shakespeare_1609.jpg", wrongs: ["Charles Dickens", "Jane Austen", "Mark Twain"] },
+            { id: 12, name: "Michael Jackson", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Michael_Jackson_in_1988.jpg/320px-Michael_Jackson_in_1988.jpg", wrongs: ["Prince", "Freddie Mercury", "David Bowie"] },
+            { id: 13, name: "Frida Kahlo", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Frida_Kahlo_1941.jpg/320px-Frida_Kahlo_1941.jpg", wrongs: ["Georgia O'Keeffe", "Pablo Picasso", "Salvador Dalí"] },
+            { id: 14, name: "Steve Jobs", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Steve_Jobs_at_the_Apple_WWDC_2008.jpg/320px-Steve_Jobs_at_the_Apple_WWDC_2008.jpg", wrongs: ["Bill Gates", "Mark Zuckerberg", "Jeff Bezos"] },
+            { id: 15, name: "Malala Yousafzai", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Malala_Yousafzai_%28cropped%29.jpg/320px-Malala_Yousafzai_%28cropped%29.jpg", wrongs: ["Greta Thunberg", "Emma Watson", "Michelle Obama"] },
+            { id: 16, name: "Pablo Picasso", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Pablo_Picasso%2C_1925.jpg/320px-Pablo_Picasso%2C_1925.jpg", wrongs: ["Salvador Dalí", "Vincent van Gogh", "Claude Monet"] },
+            { id: 17, name: "Oprah Winfrey", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Oprah_Winfrey_at_the_2016_Vanity_Fair_Oscars_Party_%28cropped%29.jpg/320px-Oprah_Winfrey_at_the_2016_Vanity_Fair_Oscars_Party_%28cropped%29.jpg", wrongs: ["Michelle Obama", "Beyoncé", "Ellen DeGeneres"] },
+            { id: 18, name: "Vincent van Gogh", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project.jpg/320px-Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project.jpg", wrongs: ["Claude Monet", "Edvard Munch", "Paul Gauguin"] },
+            { id: 19, name: "Beyoncé", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Beyonc%C3%A9_at_the_2016_VMA_%28cropped%29.jpg/320px-Beyonc%C3%A9_at_the_2016_VMA_%28cropped%29.jpg", wrongs: ["Rihanna", "Lady Gaga", "Ariana Grande"] },
+            { id: 20, name: "Nikola Tesla", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Nikola_Tesla_1890.jpg/320px-Nikola_Tesla_1890.jpg", wrongs: ["Thomas Edison", "Alexander Graham Bell", "Albert Einstein"] },
+            { id: 21, name: "Jane Austen", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Jane_Austen_by_Cassandra_Austen_%28cropped%29.jpg/320px-Jane_Austen_by_Cassandra_Austen_%28cropped%29.jpg", wrongs: ["Charlotte Brontë", "Mary Shelley", "Emily Brontë"] },
+            { id: 22, name: "Lionel Messi", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Lionel_Messi_%28cropped%29.jpg/320px-Lionel_Messi_%28cropped%29.jpg", wrongs: ["Cristiano Ronaldo", "Kylian Mbappé", "Neymar"] },
+            { id: 23, name: "Serena Williams", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Serena_Williams_%28cropped%29.jpg/320px-Serena_Williams_%28cropped%29.jpg", wrongs: ["Venus Williams", "Naomi Osaka", "Simona Halep"] },
+            { id: 24, name: "Martin Luther King Jr.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Martin_Luther_King_Jr_NYWTS.jpg/320px-Martin_Luther_King_Jr_NYWTS.jpg", wrongs: ["Malcolm X", "Nelson Mandela", "John F. Kennedy"] },
+            { id: 25, name: "Tom Hanks", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Tom_Hanks_at_the_2024_Palm_Springs_International_Film_Festival_%28cropped%29.jpg/320px-Tom_Hanks_at_the_2024_Palm_Springs_International_Film_Festival_%28cropped%29.jpg", wrongs: ["Tom Cruise", "Denzel Washington", "Leonardo DiCaprio"] },
+            { id: 26, name: "Ada Lovelace", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Ada_Lovelace_1838.jpg/320px-Ada_Lovelace_1838.jpg", wrongs: ["Marie Curie", "Grace Hopper", "Hedy Lamarr"] },
+            { id: 27, name: "Bob Marley", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bob_Marley_1977_%28cropped%29.jpg/320px-Bob_Marley_1977_%28cropped%29.jpg", wrongs: ["Jimi Hendrix", "Bob Dylan", "Marley family"] },
+            { id: 28, name: "Ruth Bader Ginsburg", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Ruth_Bader_Ginsburg_2016_portrait_%28cropped%29.jpg/320px-Ruth_Bader_Ginsburg_2016_portrait_%28cropped%29.jpg", wrongs: ["Sonia Sotomayor", "Elena Kagan", "Sandra Day O'Connor"] },
+            { id: 29, name: "Cristiano Ronaldo", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Cristiano_Ronaldo_2018.jpg/320px-Cristiano_Ronaldo_2018.jpg", wrongs: ["Lionel Messi", "Kylian Mbappé", "Neymar"] },
+            { id: 30, name: "Greta Thunberg", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Greta_Thunberg_2020_%28cropped%29.jpg/320px-Greta_Thunberg_2020_%28cropped%29.jpg", wrongs: ["Malala Yousafzai", "Emma Watson", "Alexandria Ocasio-Cortez"] },
+            { id: 31, name: "Freddie Mercury", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Freddie_Mercury_1977_%28cropped%29.jpg/320px-Freddie_Mercury_1977_%28cropped%29.jpg", wrongs: ["Elton John", "David Bowie", "Michael Jackson"] },
+            { id: 32, name: "Simone Biles", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Simone_Biles_2016_%28cropped%29.jpg/320px-Simone_Biles_2016_%28cropped%29.jpg", wrongs: ["Nadia Comăneci", "Mary Lou Retton", "Sunisa Lee"] }
         ]
 
         // Game state
-        let coins = 42
-        let cooldownEnd = 0
+        let trophies = 0
         let currentGameQuestions = []
         let currentIndex = 0
         let correctCount = 0
         let wrongCount = 0
-        let consecutiveWrong = 0
         let timerInterval = null
         let remainingTime = 5
-        let startCoins = 0
         let answered = false
         let audioContext = null
+        let questionResults = [] // 'correct' or 'wrong' for each question
 
         function loadProgress() {
-            const savedCoins = localStorage.getItem('fameguess_coins')
-            if (savedCoins) coins = parseInt(savedCoins)
-            const savedCooldown = localStorage.getItem('fameguess_cooldown')
-            if (savedCooldown) cooldownEnd = parseInt(savedCooldown)
-            updateCoinDisplay()
-            checkCooldownStatus()
+            const savedTrophies = localStorage.getItem('fameguess_trophies')
+            if (savedTrophies) trophies = parseInt(savedTrophies)
+            updateTrophyDisplay()
         }
 
         function saveProgress() {
-            localStorage.setItem('fameguess_coins', coins)
-            if (cooldownEnd > Date.now()) localStorage.setItem('fameguess_cooldown', cooldownEnd)
-            else localStorage.removeItem('fameguess_cooldown')
+            localStorage.setItem('fameguess_trophies', trophies)
         }
 
-        function updateCoinDisplay() {
-            const el = document.getElementById('coin-count')
-            if (el) el.textContent = Math.max(0, coins)
-            const modalEl = document.getElementById('modal-coin-count')
-            if (modalEl) modalEl.textContent = Math.max(0, coins)
+        function updateTrophyDisplay() {
+            const el = document.getElementById('trophy-count')
+            if (el) el.textContent = trophies
+            const modalEl = document.getElementById('modal-trophy-count')
+            if (modalEl) modalEl.textContent = trophies
         }
 
-        // ==================== PRELOAD ALL IMAGES (CRITICAL FIX) ====================
         function preloadAllImages() {
-            console.log('🚀 Preloading all 32 images for instant loading...')
+            console.log('🚀 Preloading all 32 images (320px) for instant loading...')
             questionsPool.forEach(q => {
                 const img = new Image()
                 img.src = q.image
             })
-            console.log('✅ All images preloaded and cached by browser')
+            console.log('✅ All images preloaded and cached')
         }
 
-        // Sound effects
         function playSound(type) {
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)()
             const now = audioContext.currentTime
@@ -414,14 +351,11 @@
         }
 
         function startGame() {
-            if (!checkCanPlay()) return
-            
-            startCoins = coins
-            currentIndex = 0
             correctCount = 0
             wrongCount = 0
-            consecutiveWrong = 0
+            currentIndex = 0
             answered = false
+            questionResults = []
             
             currentGameQuestions = shuffle(questionsPool).slice(0, 10)
             
@@ -433,47 +367,36 @@
             loadQuestion()
         }
 
-        function checkCanPlay() {
-            const now = Date.now()
-            if (cooldownEnd > now) {
-                showCooldownBanner()
-                return false
-            }
-            if (coins <= 0) {
-                cooldownEnd = now + 10 * 60 * 1000
-                saveProgress()
-                showCooldownBanner()
-                return false
-            }
-            return true
-        }
-
         function renderProgressDots() {
             const container = document.getElementById('progress-dots')
             container.innerHTML = ''
             for (let i = 0; i < 10; i++) {
                 const dot = document.createElement('div')
-                dot.className = `w-5 h-2 rounded-full ${i === 0 ? 'bg-emerald-400' : 'bg-zinc-700'}`
+                dot.className = 'w-5 h-2 rounded-full bg-zinc-700'
                 container.appendChild(dot)
             }
         }
 
         function updateProgressDots() {
             const dots = document.getElementById('progress-dots').children
-            for (let i = 0; i < dots.length; i++) {
-                dots[i].className = i < currentIndex 
-                    ? 'w-5 h-2 rounded-full bg-emerald-400' 
-                    : i === currentIndex 
-                        ? 'w-5 h-2 rounded-full bg-emerald-400 animate-pulse' 
-                        : 'w-5 h-2 rounded-full bg-zinc-700'
+            for (let i = 0; i < 10; i++) {
+                if (i < currentIndex) {
+                    // Already answered
+                    const result = questionResults[i]
+                    dots[i].className = result === 'correct' 
+                        ? 'w-5 h-2 rounded-full bg-emerald-400' 
+                        : 'w-5 h-2 rounded-full bg-rose-400'
+                } else if (i === currentIndex) {
+                    dots[i].className = 'w-5 h-2 rounded-full bg-emerald-400 animate-pulse'
+                } else {
+                    dots[i].className = 'w-5 h-2 rounded-full bg-zinc-700'
+                }
             }
             document.getElementById('question-counter').textContent = `${currentIndex + 1} / 10`
             document.getElementById('correct-count').textContent = correctCount
             document.getElementById('wrong-count').textContent = wrongCount
-            document.getElementById('streak-text').textContent = `${consecutiveWrong} WRONG STREAK`
         }
 
-        // ==================== FIXED IMAGE LOADING LOGIC ====================
         function loadQuestion() {
             if (currentIndex >= 10) return endGame()
             
@@ -484,24 +407,24 @@
             const placeholder = document.getElementById('image-placeholder')
             const overlay = document.getElementById('image-overlay')
             
-            // Reset UI
             overlay.style.opacity = '0'
             img.style.opacity = '0'
-            placeholder.style.display = 'flex'   // show placeholder immediately
+            placeholder.style.display = 'flex'
             
-            // Set new image
-            img.onload = function() {
-                placeholder.style.display = 'none'   // hide placeholder instantly
-                img.style.opacity = '1'              // reveal crisp image
-            }
-            
-            img.onerror = function() {
+            // NEW loading method: force reload + onload guarantee
+            img.onload = () => {
                 placeholder.style.display = 'none'
                 img.style.opacity = '1'
-                console.warn('Image failed:', q.image)
             }
             
-            img.src = q.image   // trigger load
+            img.onerror = () => {
+                console.warn('⚠️ Image failed to load, using fallback')
+                placeholder.style.display = 'none'
+                img.style.opacity = '1'
+            }
+            
+            // Force fresh load
+            img.src = q.image + '?t=' + Date.now()
             
             // Build options
             let options = [q.name, ...q.wrongs]
@@ -511,7 +434,7 @@
             grid.innerHTML = ''
             options.forEach(option => {
                 const btn = document.createElement('button')
-                btn.className = 'option-btn col-span-1 bg-zinc-800 hover:bg-zinc-700 text-left px-6 py-8 rounded-3xl text-2xl font-medium flex items-center shadow-inner'
+                btn.className = 'option-btn col-span-1 bg-zinc-800 hover:bg-zinc-700 text-left px-6 py-7 rounded-3xl text-2xl font-medium flex items-center shadow-inner'
                 btn.innerHTML = `<span class="flex-1">${option}</span>`
                 btn.onclick = () => handleAnswer(option, q.name)
                 grid.appendChild(btn)
@@ -553,24 +476,17 @@
                 feedback.innerHTML = `✅<br>SPOT ON!`
                 feedback.className = 'text-6xl font-bold title-font px-12 py-6 rounded-3xl text-center bg-emerald-400/90 text-zinc-950'
                 correctCount++
-                coins += 2
-                consecutiveWrong = 0
+                questionResults.push('correct')
             } else {
                 playSound('wrong')
                 feedback.innerHTML = `❌<br>NOT QUITE`
                 feedback.className = 'text-6xl font-bold title-font px-12 py-6 rounded-3xl text-center bg-rose-400/90 text-white'
                 wrongCount++
-                coins = Math.max(0, coins - 1)
-                consecutiveWrong++
+                questionResults.push('wrong')
             }
             
             overlay.style.opacity = '1'
-            updateCoinDisplay()
-            
-            if (consecutiveWrong >= 3 || wrongCount >= 5) {
-                setTimeout(() => triggerEarlyGameOver(), 1100)
-                return
-            }
+            updateProgressDots()
             
             setTimeout(() => {
                 overlay.style.opacity = '0'
@@ -584,20 +500,14 @@
             clearInterval(timerInterval)
             playSound('wrong')
             wrongCount++
-            coins = Math.max(0, coins - 1)
-            consecutiveWrong++
-            updateCoinDisplay()
+            questionResults.push('wrong')
+            updateProgressDots()
             
             const overlay = document.getElementById('image-overlay')
             const feedback = document.getElementById('feedback-text')
             feedback.innerHTML = `⏰ TIME'S UP<br>The answer was:<br><span class="text-4xl">${currentGameQuestions[currentIndex].name}</span>`
             feedback.className = 'text-5xl font-bold title-font px-12 py-6 rounded-3xl text-center bg-amber-400/90 text-zinc-950'
             overlay.style.opacity = '1'
-            
-            if (consecutiveWrong >= 3 || wrongCount >= 5) {
-                setTimeout(() => triggerEarlyGameOver(), 1400)
-                return
-            }
             
             setTimeout(() => {
                 overlay.style.opacity = '0'
@@ -606,42 +516,14 @@
             }, 1600)
         }
 
-        function triggerEarlyGameOver() {
-            let reason = ''
-            if (consecutiveWrong >= 3) {
-                reason = '3 WRONG IN A ROW'
-                coins = Math.max(0, coins - 5)
-            } else if (wrongCount >= 5) {
-                reason = '5 WRONG TOTAL'
-                coins = startCoins
-            }
-            saveProgress()
-            updateCoinDisplay()
-            
-            document.getElementById('early-reason').innerHTML = `${reason}<br><span class="text-2xl">Better luck next round!</span>`
-            document.getElementById('early-modal').classList.remove('hidden')
-            document.getElementById('screen-game').classList.add('hidden')
-        }
-
-        function hideEarlyModal() {
-            document.getElementById('early-modal').classList.add('hidden')
-            goToMenu()
-        }
-
         function endGame() {
-            let netChange = coins - startCoins
             const isPerfect = correctCount === 10
             
             if (isPerfect) {
-                coins += 30
-                netChange += 30
-            } else if (wrongCount >= 5) {
-                coins = startCoins
-                netChange = 0
+                trophies++
+                saveProgress()
+                updateTrophyDisplay()
             }
-            
-            saveProgress()
-            updateCoinDisplay()
             
             document.getElementById('screen-game').classList.add('hidden')
             const results = document.getElementById('screen-results')
@@ -654,23 +536,17 @@
             if (isPerfect) {
                 iconEl.innerHTML = '🏆🔥'
                 titleEl.innerHTML = 'LEGENDARY!'
-                subtitleEl.textContent = 'You nailed all 10. The internet bows to you.'
-                document.getElementById('perfect-badge').classList.remove('hidden')
-            } else if (correctCount >= 7) {
-                iconEl.innerHTML = '👏'
-                titleEl.textContent = 'Solid Performance'
-                subtitleEl.textContent = `You got ${correctCount}/10 right`
-                document.getElementById('perfect-badge').classList.add('hidden')
+                subtitleEl.textContent = 'Perfect round! You are unstoppable.'
+                document.getElementById('trophy-unlocked').classList.remove('hidden')
             } else {
-                iconEl.innerHTML = '💪'
-                titleEl.textContent = 'Good Try'
-                subtitleEl.textContent = `You got ${correctCount}/10 right`
-                document.getElementById('perfect-badge').classList.add('hidden')
+                iconEl.innerHTML = correctCount >= 7 ? '👏' : '💪'
+                titleEl.textContent = correctCount >= 7 ? 'Great Run!' : 'Good Try'
+                subtitleEl.textContent = `You got ${correctCount} out of 10`
+                document.getElementById('trophy-unlocked').classList.add('hidden')
             }
             
-            document.getElementById('round-coins').innerHTML = netChange >= 0 ? `+${netChange}` : `${netChange}`
-            document.getElementById('round-coins').className = `text-5xl font-semibold tabular-nums ${netChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`
-            document.getElementById('total-coins-final').textContent = coins
+            document.getElementById('final-correct').textContent = correctCount
+            document.getElementById('final-wrong').textContent = wrongCount
         }
 
         function restartGame() {
@@ -682,48 +558,23 @@
             document.getElementById('screen-game').classList.add('hidden')
             document.getElementById('screen-results').classList.add('hidden')
             document.getElementById('screen-menu').classList.remove('hidden')
-            checkCooldownStatus()
         }
 
-        function checkCooldownStatus() {
-            const banner = document.getElementById('cooldown-banner')
-            const now = Date.now()
-            if (cooldownEnd > now) {
-                banner.classList.remove('hidden')
-                const remainingMs = cooldownEnd - now
-                const minutes = Math.floor(remainingMs / 60000)
-                const seconds = Math.floor((remainingMs % 60000) / 1000)
-                document.getElementById('cooldown-time').innerHTML = `${minutes} min ${seconds} sec until you can play again`
-            } else {
-                banner.classList.add('hidden')
-                if (cooldownEnd > 0) {
-                    cooldownEnd = 0
-                    saveProgress()
-                }
-            }
+        function showTrophiesModal() {
+            document.getElementById('trophies-modal').classList.remove('hidden')
         }
 
-        function showCooldownBanner() {
-            checkCooldownStatus()
-        }
-
-        function checkCooldown() {
-            checkCooldownStatus()
-        }
-
-        function showCoinsModal() {
-            document.getElementById('coins-modal').classList.remove('hidden')
-        }
-
-        function hideCoinsModal() {
-            document.getElementById('coins-modal').classList.add('hidden')
+        function hideTrophiesModal() {
+            document.getElementById('trophies-modal').classList.add('hidden')
         }
 
         // ==================== INITIALIZE ====================
         window.onload = function() {
             loadProgress()
-            preloadAllImages()          // ← THIS IS THE MAIN FIX
-            console.log('%c✅ FameGuess v2 — Images now load instantly (preloaded + 640px thumbs + proper onload)', 'background:#00f5d4;color:#111;font-size:13px')
+            preloadAllImages()
+            
+            console.log('%c✅ FameGuess v3 — Fixed image loading (320px + preload + eager + sync) + tighter layout + trophies only', 'background:#00f5d4;color:#111;font-size:13px')
+            console.log('No coins, no cooldown, no penalties. Just fun + trophies for perfect rounds.')
         }
     </script>
 </body>
