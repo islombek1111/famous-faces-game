@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Famous Faces Quiz</title>
+    <style>
+        :root { --primary: #4a90e2; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #game-box { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
+        .stats-bar { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem; }
+        #coin-display { color: #d4af37; }
+        #timer-display { color: #e74c3c; }
+        .img-container { width: 100%; height: 250px; background: #eee; border-radius: 10px; overflow: hidden; margin-bottom: 20px; border: 3px solid #fff; outline: 1px solid #ddd; }
+        #person-img { width: 100%; height: 100%; object-fit: cover; }
+        .options-grid { display: grid; grid-template-columns: 1-fr; gap: 10px; }
+        button { padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-size: 1rem; cursor: pointer; transition: transform 0.1s, background 0.2s; }
+        button:hover { background: #357abd; }
+        button:active { transform: scale(0.98); }
+        #lockout-msg { color: #e74c3c; display: none; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="game-box">
+    <div id="game-ui">
+        <div class="stats-bar">
+            <span>Coins: <span id="coin-display">10</span></span>
+            <span>Time: <span id="timer-display">5</span>s</span>
+        </div>
+        <div class="img-container">
+            <img id="person-img" src="" alt="Famous Person">
+        </div>
+        <div id="options-container" class="options-grid"></div>
+        <p>Question: <span id="q-count">1</span>/10</p>
+    </div>
+    <div id="lockout-msg">
+        <h2>Out of Coins!</h2>
+        <p>Please wait 10 minutes to play again.</p>
+        <h1 id="countdown">10:00</h1>
+    </div>
+</div>
+
+<script>
+    // Expanded Database
+    const database = [
+        { name: "Albert Einstein", img: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Einstein_1921_by_F_Schmutzer_-_restoration.jpg", options: ["Newton", "Einstein", "Tesla", "Curie"] },
+        { name: "Marilyn Monroe", img: "https://upload.wikimedia.org/wikipedia/commons/4/4e/Marilyn_Monroe_-_photograph_by_Richard_Avedon_1957.jpg", options: ["Monroe", "Hepburn", "Taylor", "Kelly"] },
+        { name: "Leonardo Da Vinci", img: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Francesco_Melzi_-_Portrait_of_Leonardo.png", options: ["Raphael", "Michelangelo", "Da Vinci", "Donatello"] },
+        { name: "Steve Jobs", img: "https://upload.wikimedia.org/wikipedia/commons/d/dc/Steve_Jobs_Headshot_2010-CROP_%28cropped%29.jpg", options: ["Gates", "Jobs", "Wozniak", "Musk"] },
+        { name: "Marie Curie", img: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Marie_Curie_1903.jpg", options: ["Meitner", "Franklin", "Curie", "Lovelace"] },
+        { name: "Charlie Chaplin", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Charlie_Chaplin_portrait.jpg", options: ["Keaton", "Chaplin", "Lloyd", "Arbuckle"] },
+        { name: "Abraham Lincoln", img: "https://upload.wikimedia.org/wikipedia/commons/a/ab/Abraham_Lincoln_O-77_by_Gardner%2C_1863-crop.png", options: ["Lincoln", "Washington", "Grant", "Jefferson"] },
+        { name: "Frida Kahlo", img: "https://upload.wikimedia.org/wikipedia/commons/0/06/Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg", options: ["Kahlo", "Rivera", "O'Keeffe", "Cassatt"] },
+        { name: "Nelson Mandela", img: "https://upload.wikimedia.org/wikipedia/commons/0/02/Nelson_Mandela_1994.jpg", options: ["Tutu", "Mandela", "Biko", "Annan"] },
+        { name: "Audrey Hepburn", img: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Audrey_Hepburn_1956_Exeter.jpg", options: ["Loren", "Hepburn", "Garland", "Bergman"] }
+    ];
+
+    let coins = 10;
+    let currentSessionQuestions = [];
+    let currentIndex = 0;
+    let streakWrong = 0;
+    let totalWrong = 0;
+    let correctInRow = 0;
+    let timer;
+    let timeLeft = 5;
+
+    function initGame() {
+        if (coins <= 0) { showLockout(); return; }
+        // Shuffle and pick 10
+        currentSessionQuestions = [...database].sort(() => 0.5 - Math.random()).slice(0, 10);
+        currentIndex = 0;
+        streakWrong = 0;
+        totalWrong = 0;
+        correctInRow = 0;
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIndex >= 10) {
+            endGame(true);
+            return;
+        }
+
+        const q = currentSessionQuestions[currentIndex];
+        document.getElementById('person-img').src = q.img;
+        document.getElementById('q-count').innerText = currentIndex + 1;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        // Shuffle options for variety
+        const shuffledOptions = [...q.options].sort(() => 0.5 - Math.random());
+        
+        shuffledOptions.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.onclick = () => handleAnswer(opt === q.name);
+            container.appendChild(btn);
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timer);
+        timeLeft = 5;
+        document.getElementById('timer-display').innerText = timeLeft;
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer-display').innerText = timeLeft;
+            if (timeLeft <= 0) handleAnswer(false);
+        }, 1000);
+    }
+
+    function handleAnswer(isCorrect) {
+        clearInterval(timer);
+        
+        if (isCorrect) {
+            coins += 2;
+            streakWrong = 0;
+            correctInRow++;
+        } else {
+            coins -= 1;
+            streakWrong++;
+            totalWrong++;
+            correctInRow = 0;
+        }
+
+        updateUI();
+
+        // Game Over Logic
+        if (streakWrong >= 3) {
+            coins -= 5; // Penalty for 3 in a row
+            updateUI();
+            alert("Game Over! 3 wrong in a row.");
+            initGame();
+            return;
+        }
+
+        if (totalWrong >= 5) {
+            alert("Game Over! 5 total wrongs. No coins added/deducted.");
+            initGame();
+            return;
+        }
+
+        currentIndex++;
+        setTimeout(loadQuestion, 500);
+    }
+
+    function updateUI() {
+        document.getElementById('coin-display').innerText = coins;
+    }
+
+    function endGame(completed) {
+        if (completed && totalWrong === 0) {
+            coins += 30;
+            alert("Perfect! You earned a 30 coin bonus!");
+        } else if (completed) {
+            alert("Try finished!");
+        }
+        updateUI();
+        initGame();
+    }
+
+    function showLockout() {
+        document.getElementById('game-ui').style.display = 'none';
+        document.getElementById('lockout-msg').style.display = 'block';
+        let wait = 600; // 10 mins in seconds
+        const countTimer = setInterval(() => {
+            wait--;
+            let mins = Math.floor(wait / 60);
+            let secs = wait % 60;
+            document.getElementById('countdown').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            if (wait <= 0) {
+                clearInterval(countTimer);
+                coins = 10;
+                document.getElementById('game-ui').style.display = 'block';
+                document.getElementById('lockout-msg').style.display = 'none';
+                initGame();
+            }
+        }, 1000);
+    }
+
+    initGame();
+</script>
+</body>
+</html>
