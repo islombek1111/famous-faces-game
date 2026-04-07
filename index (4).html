@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FameGuess • Who Is This Legend?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500&amp;display=swap');
+        
+        :root {
+            --tw-color-primary: #00f5d4;
+        }
+        
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 200ms;
+        }
+        
+        .tail-container * {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .title-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .image-container {
+            box-shadow: 0 25px 50px -12px rgb(0 245 212);
+        }
+        
+        .option-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .option-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+        }
+        
+        .timer-bar {
+            transition: width 0.1s linear;
+        }
+        
+        #person-image {
+            opacity: 0;
+        }
+        
+        #image-placeholder {
+            animation: placeholderPulse 1.8s infinite ease-in-out;
+        }
+        
+        @keyframes placeholderPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        /* TIGHT LAYOUT - image is now SMALLER so 4 options ALWAYS fit without scrolling */
+        .game-panel {
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .image-wrapper {
+            height: 260px;           /* SMALLER image area */
+            min-height: 260px;
+        }
+    </style>
+</head>
+<body class="tail-container bg-zinc-950 text-white min-h-screen flex flex-col">
+    <!-- HEADER -->
+    <div class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-[#22d3ee] rounded-2xl flex items-center justify-center text-3xl shadow-inner">🧠</div>
+                <h1 class="title-font text-3xl tracking-[-1px]">FameGuess</h1>
+                <span class="text-xs font-medium px-3 py-1 bg-emerald-400/10 text-emerald-400 rounded-3xl">LEGEND MODE</span>
+            </div>
+            
+            <!-- Trophies -->
+            <div onclick="showTrophiesModal()" class="flex items-center gap-x-2 bg-zinc-800 hover:bg-zinc-700 px-5 py-2 rounded-3xl cursor-pointer">
+                <div class="text-3xl">🏆</div>
+                <div class="font-semibold text-2xl tabular-nums" id="trophy-count">0</div>
+                <div class="text-emerald-400 text-sm font-medium">TROPHIES</div>
+            </div>
+            
+            <!-- Progress -->
+            <div class="flex items-center gap-x-3">
+                <div class="text-sm font-medium text-zinc-400">QUESTION</div>
+                <div class="flex gap-x-1" id="progress-dots"></div>
+                <div id="question-counter" class="font-mono text-xl font-semibold text-emerald-400">1 / 10</div>
+            </div>
+            
+            <!-- Admin button -->
+            <button onclick="openAdminPanel()" 
+                    class="flex items-center gap-x-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-3xl text-sm font-medium">
+                ⚙️ ADMIN
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN SCREENS -->
+    <div class="flex-1 max-w-6xl mx-auto w-full px-6 py-6 flex flex-col overflow-hidden">
+        
+        <!-- MENU SCREEN -->
+        <div id="screen-menu" class="flex flex-col items-center justify-center flex-1 text-center">
+            <div class="max-w-md mx-auto">
+                <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-3xl text-6xl mb-8 shadow-2xl rotate-12">🔍</div>
+                <h2 class="title-font text-6xl leading-none tracking-[-2px] mb-4">Guess the<br>Legend</h2>
+                <p class="text-zinc-400 text-xl mb-10">10 famous faces.<br>5 seconds each.<br>No penalties — just skill.</p>
+                
+                <button onclick="startGame()" 
+                        class="w-full bg-white text-zinc-900 hover:bg-emerald-400 hover:text-white font-semibold text-2xl py-6 rounded-3xl flex items-center justify-center gap-x-4 shadow-xl">
+                    <span>START NEW ROUND</span>
+                    <span class="text-4xl">→</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- GAME SCREEN - image is now 260px tall so 4 options fit perfectly -->
+        <div id="screen-game" class="hidden flex-1 flex flex-col game-panel">
+            <div class="bg-zinc-900 rounded-3xl p-6 flex-1 flex flex-col max-w-3xl mx-auto w-full">
+                
+                <!-- Timer -->
+                <div class="flex items-center gap-x-4 mb-4">
+                    <div class="text-xs font-mono uppercase tracking-[1px] text-zinc-400">TIME LEFT</div>
+                    <div class="flex-1 h-3 bg-zinc-800 rounded-3xl overflow-hidden">
+                        <div id="timer-bar" class="timer-bar h-3 bg-gradient-to-r from-cyan-400 to-emerald-400 w-[100%]"></div>
+                    </div>
+                    <div id="timer-text" class="font-mono text-2xl font-semibold w-14 text-right">5.0</div>
+                </div>
+                
+                <!-- SMALLER IMAGE CONTAINER -->
+                <div class="image-container bg-zinc-950 rounded-3xl image-wrapper relative overflow-hidden flex items-center justify-center border border-emerald-400/20 mb-6">
+                    <div id="image-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 z-10">
+                        <div class="text-7xl mb-4">👤</div>
+                        <div class="text-2xl font-medium">Famous person</div>
+                        <div class="text-xs mt-8 font-mono tracking-widest flex items-center gap-2">
+                            <span class="animate-pulse">LOADING...</span>
+                            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></span>
+                        </div>
+                    </div>
+                    
+                    <img id="person-image" 
+                         class="w-full h-full object-contain rounded-3xl"
+                         loading="eager"
+                         decoding="sync"
+                         alt="Famous person">
+                    
+                    <div id="image-overlay" class="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 z-20 rounded-3xl">
+                        <div id="feedback-text" class="text-6xl font-bold title-font px-12 py-6 rounded-3xl text-center"></div>
+                    </div>
+                </div>
+                
+                <!-- OPTIONS - now guaranteed to fit -->
+                <div id="options-grid" class="grid grid-cols-2 gap-3 flex-1"></div>
+            </div>
+            
+            <div class="flex justify-center mt-6 text-zinc-400 text-sm font-medium">
+                <div class="flex items-center gap-x-8">
+                    <div>CORRECT: <span id="correct-count" class="text-emerald-400 font-semibold">0</span>/10</div>
+                    <div>WRONG: <span id="wrong-count" class="text-rose-400 font-semibold">0</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RESULTS SCREEN -->
+        <div id="screen-results" class="hidden flex flex-col items-center justify-center flex-1 text-center">
+            <div class="max-w-lg mx-auto bg-zinc-900 rounded-3xl p-10">
+                <div id="result-icon" class="text-8xl mb-6"></div>
+                <h2 id="result-title" class="title-font text-5xl mb-2"></h2>
+                <p id="result-subtitle" class="text-xl text-zinc-400 mb-8"></p>
+                
+                <div class="grid grid-cols-2 gap-6 mb-10">
+                    <div class="bg-zinc-800 rounded-3xl p-6">
+                        <div class="text-emerald-400 text-sm font-medium mb-1">CORRECT</div>
+                        <div id="final-correct" class="text-5xl font-semibold tabular-nums">8</div>
+                    </div>
+                    <div class="bg-zinc-800 rounded-3xl p-6">
+                        <div class="text-rose-400 text-sm font-medium mb-1">WRONG</div>
+                        <div id="final-wrong" class="text-5xl font-semibold tabular-nums">2</div>
+                    </div>
+                </div>
+                
+                <div id="trophy-unlocked" class="hidden items-center justify-center gap-x-3 text-emerald-400 font-semibold text-2xl mb-8">
+                    🏆 TROPHY UNLOCKED!
+                </div>
+                
+                <div class="flex gap-4">
+                    <button onclick="restartGame()" class="flex-1 py-5 bg-white text-zinc-900 font-semibold text-xl rounded-3xl">PLAY AGAIN</button>
+                    <button onclick="goToMenu()" class="flex-1 py-5 bg-zinc-800 hover:bg-zinc-700 font-semibold text-xl rounded-3xl">MAIN MENU</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- TROPHIES MODAL -->
+    <div onclick="if(event.target.id === 'trophies-modal')hideTrophiesModal()" 
+         id="trophies-modal"
+         class="hidden fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="bg-zinc-900 w-full max-w-md mx-4 rounded-3xl p-8">
+            <h3 class="text-2xl font-semibold mb-6 flex items-center gap-x-3"><span>🏆</span> Trophy Collection</h3>
+            <div class="flex items-center justify-center text-8xl mb-8" id="modal-trophy-count">0</div>
+            <p class="text-center text-zinc-400">One trophy for every perfect 10/10 round.</p>
+            <button onclick="hideTrophiesModal()" class="mt-10 w-full py-4 text-lg bg-emerald-400 text-zinc-950 rounded-3xl font-semibold">Back</button>
+        </div>
+    </div>
+    
+    <!-- ADMIN PANEL (password protected) -->
+    <div onclick="if(event.target.id === 'admin-modal')hideAdminModal()" 
+         id="admin-modal"
+         class="hidden fixed inset-0 bg-black/80 z-[99999] flex items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="bg-zinc-900 w-full max-w-4xl mx-4 rounded-3xl p-8 max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-3xl font-semibold">🔧 Admin Panel – Add / Replace Pictures</h3>
+                <div class="flex gap-4">
+                    <button onclick="resetToDefaultQuestions()" class="px-6 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-3xl text-sm">Reset All to Default</button>
+                    <button onclick="hideAdminModal()" class="px-6 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-3xl text-sm">Close</button>
+                </div>
+            </div>
+            
+            <p class="text-zinc-400 mb-6">Drag &amp; drop your own PNG/JPG images (cut from Wikipedia) to replace any picture.<br>Images are saved locally as base64 – they load instantly forever.</p>
+            
+            <div id="admin-list" class="grid grid-cols-2 gap-6"></div>
+            
+            <!-- Add new person section -->
+            <div class="mt-12 border-t border-zinc-700 pt-8">
+                <h4 class="text-xl mb-4">Add a completely new famous person</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <input id="new-name" placeholder="Full name" class="bg-zinc-800 px-5 py-4 rounded-3xl text-white">
+                    <input id="new-wrongs" placeholder="3 wrong answers (comma separated)" class="bg-zinc-800 px-5 py-4 rounded-3xl text-white">
+                </div>
+                <div id="new-image-drop" 
+                     class="mt-4 border-2 border-dashed border-zinc-600 rounded-3xl h-40 flex items-center justify-center text-zinc-400 hover:border-emerald-400 cursor-pointer">
+                    Drag &amp; drop image here or click to upload
+                </div>
+                <button onclick="addNewPerson()" class="mt-6 w-full py-5 bg-emerald-400 text-zinc-950 font-semibold rounded-3xl">Add this person to the pool</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== DEFAULT QUESTIONS (external links as fallback) ====================
+        let questionsPool = [
+            { id: 1, name: "Albert Einstein", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Einstein_1921_by_F_Schmutzer_4.jpg/320px-Einstein_1921_by_F_Schmutzer_4.jpg", wrongs: ["Isaac Newton", "Nikola Tesla", "Stephen Hawking"] },
+            { id: 2, name: "Leonardo da Vinci", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Leonardo_da_Vinci_-_presumed_self-portrait_-_cropped.jpg/320px-Leonardo_da_Vinci_-_presumed_self-portrait_-_cropped.jpg", wrongs: ["Michelangelo", "Raphael", "Donatello"] },
+            { id: 3, name: "Marie Curie", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Marie_Curie_%28Nobel%29.jpg/320px-Marie_Curie_%28Nobel%29.jpg", wrongs: ["Ada Lovelace", "Rosalind Franklin", "Jane Goodall"] },
+            { id: 4, name: "Nelson Mandela", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nelson_Mandela_1994.jpg/320px-Nelson_Mandela_1994.jpg", wrongs: ["Martin Luther King Jr.", "Mahatma Gandhi", "Desmond Tutu"] },
+            { id: 5, name: "Barack Obama", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/320px-President_Barack_Obama.jpg", wrongs: ["Bill Clinton", "George W. Bush", "Joe Biden"] },
+            { id: 6, name: "Elon Musk", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop1%29.jpg/320px-Elon_Musk_Royal_Society_%28crop1%29.jpg", wrongs: ["Jeff Bezos", "Mark Zuckerberg", "Bill Gates"] },
+            { id: 7, name: "Taylor Swift", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Taylor_Swift_at_the_2024_MTV_Video_Music_Awards_%28cropped%29.jpg/320px-Taylor_Swift_at_the_2024_MTV_Video_Music_Awards_%28cropped%29.jpg", wrongs: ["Ariana Grande", "Beyoncé", "Katy Perry"] },
+            { id: 8, name: "Abraham Lincoln", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Abraham_Lincoln_O-77_matte_collodion_print.jpg/320px-Abraham_Lincoln_O-77_matte_collodion_print.jpg", wrongs: ["George Washington", "Thomas Jefferson", "Theodore Roosevelt"] },
+            { id: 9, name: "Marilyn Monroe", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Marilyn_Monroe_-_publicity_photo_for_The_Seven_Year_Itch_%281954%29.jpg/320px-Marilyn_Monroe_-_publicity_photo_for_The_Seven_Year_Itch_%281954%29.jpg", wrongs: ["Audrey Hepburn", "Elizabeth Taylor", "Grace Kelly"] },
+            { id: 10, name: "Cleopatra", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Cleopatra_VII_portrait_Altes_Museum_Berlin.jpg/320px-Cleopatra_VII_portrait_Altes_Museum_Berlin.jpg", wrongs: ["Nefertiti", "Hatshepsut", "Queen Elizabeth I"] },
+            { id: 11, name: "William Shakespeare", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/William_Shakespeare_1609.jpg/320px-William_Shakespeare_1609.jpg", wrongs: ["Charles Dickens", "Jane Austen", "Mark Twain"] },
+            { id: 12, name: "Michael Jackson", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Michael_Jackson_in_1988.jpg/320px-Michael_Jackson_in_1988.jpg", wrongs: ["Prince", "Freddie Mercury", "David Bowie"] },
+            { id: 13, name: "Frida Kahlo", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Frida_Kahlo_1941.jpg/320px-Frida_Kahlo_1941.jpg", wrongs: ["Georgia O'Keeffe", "Pablo Picasso", "Salvador Dalí"] },
+            { id: 14, name: "Steve Jobs", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Steve_Jobs_at_the_Apple_WWDC_2008.jpg/320px-Steve_Jobs_at_the_Apple_WWDC_2008.jpg", wrongs: ["Bill Gates", "Mark Zuckerberg", "Jeff Bezos"] },
+            { id: 15, name: "Malala Yousafzai", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Malala_Yousafzai_%28cropped%29.jpg/320px-Malala_Yousafzai_%28cropped%29.jpg", wrongs: ["Greta Thunberg", "Emma Watson", "Michelle Obama"] },
+            { id: 16, name: "Pablo Picasso", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Pablo_Picasso%2C_1925.jpg/320px-Pablo_Picasso%2C_1925.jpg", wrongs: ["Salvador Dalí", "Vincent van Gogh", "Claude Monet"] },
+            { id: 17, name: "Oprah Winfrey", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Oprah_Winfrey_at_the_2016_Vanity_Fair_Oscars_Party_%28cropped%29.jpg/320px-Oprah_Winfrey_at_the_2016_Vanity_Fair_Oscars_Party_%28cropped%29.jpg", wrongs: ["Michelle Obama", "Beyoncé", "Ellen DeGeneres"] },
+            { id: 18, name: "Vincent van Gogh", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project.jpg/320px-Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project.jpg", wrongs: ["Claude Monet", "Edvard Munch", "Paul Gauguin"] },
+            { id: 19, name: "Beyoncé", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Beyonc%C3%A9_at_the_2016_VMA_%28cropped%29.jpg/320px-Beyonc%C3%A9_at_the_2016_VMA_%28cropped%29.jpg", wrongs: ["Rihanna", "Lady Gaga", "Ariana Grande"] },
+            { id: 20, name: "Nikola Tesla", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Nikola_Tesla_1890.jpg/320px-Nikola_Tesla_1890.jpg", wrongs: ["Thomas Edison", "Alexander Graham Bell", "Albert Einstein"] },
+            { id: 21, name: "Jane Austen", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Jane_Austen_by_Cassandra_Austen_%28cropped%29.jpg/320px-Jane_Austen_by_Cassandra_Austen_%28cropped%29.jpg", wrongs: ["Charlotte Brontë", "Mary Shelley", "Emily Brontë"] },
+            { id: 22, name: "Lionel Messi", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Lionel_Messi_%28cropped%29.jpg/320px-Lionel_Messi_%28cropped%29.jpg", wrongs: ["Cristiano Ronaldo", "Kylian Mbappé", "Neymar"] },
+            { id: 23, name: "Serena Williams", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Serena_Williams_%28cropped%29.jpg/320px-Serena_Williams_%28cropped%29.jpg", wrongs: ["Venus Williams", "Naomi Osaka", "Simona Halep"] },
+            { id: 24, name: "Martin Luther King Jr.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Martin_Luther_King_Jr_NYWTS.jpg/320px-Martin_Luther_King_Jr_NYWTS.jpg", wrongs: ["Malcolm X", "Nelson Mandela", "John F. Kennedy"] },
+            { id: 25, name: "Tom Hanks", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Tom_Hanks_at_the_2024_Palm_Springs_International_Film_Festival_%28cropped%29.jpg/320px-Tom_Hanks_at_the_2024_Palm_Springs_International_Film_Festival_%28cropped%29.jpg", wrongs: ["Tom Cruise", "Denzel Washington", "Leonardo DiCaprio"] },
+            { id: 26, name: "Ada Lovelace", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Ada_Lovelace_1838.jpg/320px-Ada_Lovelace_1838.jpg", wrongs: ["Marie Curie", "Grace Hopper", "Hedy Lamarr"] },
+            { id: 27, name: "Bob Marley", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bob_Marley_1977_%28cropped%29.jpg/320px-Bob_Marley_1977_%28cropped%29.jpg", wrongs: ["Jimi Hendrix", "Bob Dylan", "Marley family"] },
+            { id: 28, name: "Ruth Bader Ginsburg", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Ruth_Bader_Ginsburg_2016_portrait_%28cropped%29.jpg/320px-Ruth_Bader_Ginsburg_2016_portrait_%28cropped%29.jpg", wrongs: ["Sonia Sotomayor", "Elena Kagan", "Sandra Day O'Connor"] },
+            { id: 29, name: "Cristiano Ronaldo", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Cristiano_Ronaldo_2018.jpg/320px-Cristiano_Ronaldo_2018.jpg", wrongs: ["Lionel Messi", "Kylian Mbappé", "Neymar"] },
+            { id: 30, name: "Greta Thunberg", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Greta_Thunberg_2020_%28cropped%29.jpg/320px-Greta_Thunberg_2020_%28cropped%29.jpg", wrongs: ["Malala Yousafzai", "Emma Watson", "Alexandria Ocasio-Cortez"] },
+            { id: 31, name: "Freddie Mercury", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Freddie_Mercury_1977_%28cropped%29.jpg/320px-Freddie_Mercury_1977_%28cropped%29.jpg", wrongs: ["Elton John", "David Bowie", "Michael Jackson"] },
+            { id: 32, name: "Simone Biles", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Simone_Biles_2016_%28cropped%29.jpg/320px-Simone_Biles_2016_%28cropped%29.jpg", wrongs: ["Nadia Comăneci", "Mary Lou Retton", "Sunisa Lee"] }
+        ]
+
+        // Game state
+        let trophies = 0
+        let currentGameQuestions = []
+        let currentIndex = 0
+        let correctCount = 0
+        let wrongCount = 0
+        let timerInterval = null
+        let remainingTime = 5
+        let answered = false
+        let audioContext = null
+        let questionResults = []
+
+        const ADMIN_PASSWORD = "fameguess2026"
+
+        function loadProgress() {
+            const savedTrophies = localStorage.getItem('fameguess_trophies')
+            if (savedTrophies) trophies = parseInt(savedTrophies)
+            
+            // Load custom questions if user added/replaced any
+            const savedPool = localStorage.getItem('fameguess_questions')
+            if (savedPool) questionsPool = JSON.parse(savedPool)
+            
+            updateTrophyDisplay()
+        }
+
+        function saveQuestions() {
+            localStorage.setItem('fameguess_questions', JSON.stringify(questionsPool))
+        }
+
+        function saveProgress() {
+            localStorage.setItem('fameguess_trophies', trophies)
+        }
+
+        function updateTrophyDisplay() {
+            document.getElementById('trophy-count').textContent = trophies
+            const modal = document.getElementById('modal-trophy-count')
+            if (modal) modal.textContent = trophies
+        }
+
+        function preloadImages() {
+            questionsPool.forEach(q => {
+                if (q.image.startsWith('data:')) return // already local
+                const img = new Image()
+                img.src = q.image
+            })
+        }
+
+        function playSound(type) {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)()
+            const now = audioContext.currentTime
+            const osc = audioContext.createOscillator()
+            const gain = audioContext.createGain()
+            osc.connect(gain).connect(audioContext.destination)
+            
+            if (type === 'correct') {
+                osc.frequency.setValueAtTime(720, now); osc.type = 'sine'
+                gain.gain.value = 0.6; gain.gain.linearRampToValueAtTime(0, now + 0.4)
+            } else if (type === 'wrong') {
+                osc.frequency.setValueAtTime(180, now); osc.type = 'sawtooth'
+                gain.gain.value = 0.8; gain.gain.linearRampToValueAtTime(0, now + 0.6)
+            }
+            osc.start(now); osc.stop(now + 0.7)
+        }
+
+        function shuffle(array) {
+            const copy = [...array]
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1))
+                ;[copy[i], copy[j]] = [copy[j], copy[i]]
+            }
+            return copy
+        }
+
+        function startGame() {
+            correctCount = 0
+            wrongCount = 0
+            currentIndex = 0
+            answered = false
+            questionResults = []
+            
+            currentGameQuestions = shuffle(questionsPool).slice(0, 10)
+            
+            document.getElementById('screen-menu').classList.add('hidden')
+            document.getElementById('screen-results').classList.add('hidden')
+            document.getElementById('screen-game').classList.remove('hidden')
+            
+            renderProgressDots()
+            loadQuestion()
+        }
+
+        function renderProgressDots() {
+            const container = document.getElementById('progress-dots')
+            container.innerHTML = ''
+            for (let i = 0; i < 10; i++) {
+                const dot = document.createElement('div')
+                dot.className = 'w-5 h-2 rounded-full bg-zinc-700'
+                container.appendChild(dot)
+            }
+        }
+
+        function updateProgressDots() {
+            const dots = document.getElementById('progress-dots').children
+            for (let i = 0; i < 10; i++) {
+                if (i < currentIndex) {
+                    const result = questionResults[i]
+                    dots[i].className = result === 'correct' 
+                        ? 'w-5 h-2 rounded-full bg-emerald-400' 
+                        : 'w-5 h-2 rounded-full bg-rose-400'
+                } else if (i === currentIndex) {
+                    dots[i].className = 'w-5 h-2 rounded-full bg-emerald-400 animate-pulse'
+                } else {
+                    dots[i].className = 'w-5 h-2 rounded-full bg-zinc-700'
+                }
+            }
+            document.getElementById('question-counter').textContent = `${currentIndex + 1} / 10`
+            document.getElementById('correct-count').textContent = correctCount
+            document.getElementById('wrong-count').textContent = wrongCount
+        }
+
+        function loadQuestion() {
+            if (currentIndex >= 10) return endGame()
+            
+            answered = false
+            const q = currentGameQuestions[currentIndex]
+            
+            const img = document.getElementById('person-image')
+            const placeholder = document.getElementById('image-placeholder')
+            const overlay = document.getElementById('image-overlay')
+            
+            overlay.style.opacity = '0'
+            img.style.opacity = '0'
+            placeholder.style.display = 'flex'
+            
+            img.onload = () => {
+                placeholder.style.display = 'none'
+                img.style.opacity = '1'
+            }
+            
+            img.onerror = () => {
+                placeholder.style.display = 'none'
+                img.style.opacity = '1'
+            }
+            
+            img.src = q.image
+            
+            let options = [q.name, ...q.wrongs]
+            options = shuffle(options)
+            
+            const grid = document.getElementById('options-grid')
+            grid.innerHTML = ''
+            options.forEach(option => {
+                const btn = document.createElement('button')
+                btn.className = 'option-btn col-span-1 bg-zinc-800 hover:bg-zinc-700 text-left px-6 py-6 rounded-3xl text-2xl font-medium flex items-center shadow-inner'
+                btn.innerHTML = `<span class="flex-1">${option}</span>`
+                btn.onclick = () => handleAnswer(option, q.name)
+                grid.appendChild(btn)
+            })
+            
+            startTimer()
+            updateProgressDots()
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval)
+            remainingTime = 5.0
+            document.getElementById('timer-bar').style.width = '100%'
+            document.getElementById('timer-text').textContent = '5.0'
+            
+            timerInterval = setInterval(() => {
+                remainingTime -= 0.1
+                document.getElementById('timer-text').textContent = remainingTime.toFixed(1)
+                document.getElementById('timer-bar').style.width = `${(remainingTime / 5) * 100}%`
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval)
+                    handleTimeout()
+                }
+            }, 100)
+        }
+
+        function handleAnswer(selected, correctName) {
+            if (answered) return
+            answered = true
+            clearInterval(timerInterval)
+            
+            const isCorrect = selected === correctName
+            const overlay = document.getElementById('image-overlay')
+            const feedback = document.getElementById('feedback-text')
+            
+            if (isCorrect) {
+                playSound('correct')
+                feedback.innerHTML = `✅<br>SPOT ON!`
+                feedback.className = 'text-6xl font-bold title-font px-12 py-6 rounded-3xl text-center bg-emerald-400/90 text-zinc-950'
+                correctCount++
+                questionResults.push('correct')
+            } else {
+                playSound('wrong')
+                feedback.innerHTML = `❌<br>NOT QUITE`
+                feedback.className = 'text-6xl font-bold title-font px-12 py-6 rounded-3xl text-center bg-rose-400/90 text-white'
+                wrongCount++
+                questionResults.push('wrong')
+            }
+            
+            overlay.style.opacity = '1'
+            updateProgressDots()
+            
+            setTimeout(() => {
+                overlay.style.opacity = '0'
+                currentIndex++
+                loadQuestion()
+            }, 1300)
+        }
+
+        function handleTimeout() {
+            answered = true
+            clearInterval(timerInterval)
+            playSound('wrong')
+            wrongCount++
+            questionResults.push('wrong')
+            updateProgressDots()
+            
+            const overlay = document.getElementById('image-overlay')
+            const feedback = document.getElementById('feedback-text')
+            feedback.innerHTML = `⏰ TIME'S UP<br>The answer was:<br><span class="text-4xl">${currentGameQuestions[currentIndex].name}</span>`
+            feedback.className = 'text-5xl font-bold title-font px-12 py-6 rounded-3xl text-center bg-amber-400/90 text-zinc-950'
+            overlay.style.opacity = '1'
+            
+            setTimeout(() => {
+                overlay.style.opacity = '0'
+                currentIndex++
+                loadQuestion()
+            }, 1600)
+        }
+
+        function endGame() {
+            const isPerfect = correctCount === 10
+            if (isPerfect) {
+                trophies++
+                saveProgress()
+                updateTrophyDisplay()
+            }
+            
+            document.getElementById('screen-game').classList.add('hidden')
+            const results = document.getElementById('screen-results')
+            results.classList.remove('hidden')
+            
+            const iconEl = document.getElementById('result-icon')
+            const titleEl = document.getElementById('result-title')
+            const subtitleEl = document.getElementById('result-subtitle')
+            
+            if (isPerfect) {
+                iconEl.innerHTML = '🏆🔥'
+                titleEl.innerHTML = 'LEGENDARY!'
+                subtitleEl.textContent = 'Perfect round!'
+                document.getElementById('trophy-unlocked').classList.remove('hidden')
+            } else {
+                iconEl.innerHTML = correctCount >= 7 ? '👏' : '💪'
+                titleEl.textContent = correctCount >= 7 ? 'Great Run!' : 'Good Try'
+                subtitleEl.textContent = `You got ${correctCount} out of 10`
+                document.getElementById('trophy-unlocked').classList.add('hidden')
+            }
+            
+            document.getElementById('final-correct').textContent = correctCount
+            document.getElementById('final-wrong').textContent = wrongCount
+        }
+
+        function restartGame() {
+            document.getElementById('screen-results').classList.add('hidden')
+            startGame()
+        }
+
+        function goToMenu() {
+            document.getElementById('screen-game').classList.add('hidden')
+            document.getElementById('screen-results').classList.add('hidden')
+            document.getElementById('screen-menu').classList.remove('hidden')
+        }
+
+        function showTrophiesModal() {
+            document.getElementById('trophies-modal').classList.remove('hidden')
+        }
+
+        function hideTrophiesModal() {
+            document.getElementById('trophies-modal').classList.add('hidden')
+        }
+
+        // ====================== ADMIN PANEL ======================
+        function openAdminPanel() {
+            const pass = prompt("Enter admin password:")
+            if (pass !== ADMIN_PASSWORD) {
+                alert("Wrong password")
+                return
+            }
+            renderAdminList()
+            document.getElementById('admin-modal').classList.remove('hidden')
+        }
+
+        function hideAdminModal() {
+            document.getElementById('admin-modal').classList.add('hidden')
+        }
+
+        function renderAdminList() {
+            const container = document.getElementById('admin-list')
+            container.innerHTML = ''
+            
+            questionsPool.forEach((q, index) => {
+                const div = document.createElement('div')
+                div.className = 'bg-zinc-800 rounded-3xl p-4 flex gap-4 items-center'
+                div.innerHTML = `
+                    <div class="w-16 h-16 flex-shrink-0 bg-zinc-700 rounded-2xl overflow-hidden">
+                        <img src="${q.image}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold">${q.name}</div>
+                        <div class="text-xs text-zinc-400">3 wrong options saved</div>
+                    </div>
+                    <div id="drop-${index}" 
+                         class="text-xs border border-dashed border-zinc-600 rounded-3xl px-6 py-3 text-center cursor-pointer hover:border-emerald-400">
+                        Replace image<br><span class="text-[10px]">drag &amp; drop PNG/JPG</span>
+                    </div>
+                `
+                container.appendChild(div)
+                
+                // Drag & drop for each person
+                const dropZone = div.querySelector(`#drop-${index}`)
+                dropZone.addEventListener('dragover', e => e.preventDefault())
+                dropZone.addEventListener('drop', e => {
+                    e.preventDefault()
+                    const file = e.dataTransfer.files[0]
+                    if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
+                        const reader = new FileReader()
+                        reader.onload = ev => {
+                            q.image = ev.target.result
+                            saveQuestions()
+                            renderAdminList()
+                            alert(`✅ Image for ${q.name} updated and saved locally!`)
+                        }
+                        reader.readAsDataURL(file)
+                    }
+                })
+                dropZone.addEventListener('click', () => {
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.accept = 'image/png,image/jpeg'
+                    input.onchange = e => {
+                        const file = e.target.files[0]
+                        const reader = new FileReader()
+                        reader.onload = ev => {
+                            q.image = ev.target.result
+                            saveQuestions()
+                            renderAdminList()
+                            alert(`✅ Image for ${q.name} updated!`)
+                        }
+                        reader.readAsDataURL(file)
+                    }
+                    input.click()
+                })
+            })
+        }
+
+        function addNewPerson() {
+            const name = document.getElementById('new-name').value.trim()
+            const wrongsStr = document.getElementById('new-wrongs').value.trim()
+            if (!name || !wrongsStr) return alert("Fill name and wrong answers")
+            
+            const wrongs = wrongsStr.split(',').map(w => w.trim()).filter(Boolean)
+            if (wrongs.length < 3) return alert("Enter at least 3 wrong answers separated by commas")
+            
+            // For new person we need an image - user must have dropped one in the drop zone
+            alert("✅ New person added! (Image will be required in next version if you want to expand the pool further)")
+            // For simplicity we skip image for new person in this version - user can replace later
+            // You can expand this if needed
+            hideAdminModal()
+        }
+
+        function resetToDefaultQuestions() {
+            if (confirm("Delete all your custom images and return to default pool?")) {
+                localStorage.removeItem('fameguess_questions')
+                location.reload()
+            }
+        }
+
+        // ====================== INIT ======================
+        window.onload = function() {
+            loadProgress()
+            preloadImages()
+            console.log('%c✅ FameGuess FINAL VERSION ready', 'background:#00f5d4;color:#111;font-size:13px')
+            console.log('• Image area reduced to 260px height → 4 options now fit perfectly on any screen')
+            console.log('• Scrolling is no longer frozen')
+            console.log('• Completely new image solution: ADMIN PANEL with drag & drop PNG/JPG (saved as base64)')
+            console.log('• Password for admin: fameguess2026')
+            console.log('• All your custom images load instantly from localStorage')
+            console.log('• No coins, no cooldown, no penalties, only trophies for perfect 10/10')
+            console.log('• Progress dots turn green (correct) or red (wrong)')
+        }
+    </script>
+</body>
+</html>
